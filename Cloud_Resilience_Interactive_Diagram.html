@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="theme-color" content="#071422" />
+<meta name="description" content="Interactive AWS event-driven architecture: see normal delivery, duplicate messages, and retry to dead-letter queue." />
+<title>What Happens When an Event Arrives Twice? • Harshini Rao</title>
+<style>
+:root{--bg:#071321;--panel:#102235;--panel2:#122c3c;--muted:#91a6b7;--line:#244254;--white:#f4fbfc;--teal:#6af4c6;--cyan:#8bd8ff;--orange:#ffcd83;--pink:#f6a4ac}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(circle at 78% 0%,#123748 0%,#071321 43%,#07111d 100%);font:15px/1.55 Inter,ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;color:var(--white)}
+button{font:inherit}a{color:var(--teal)}.wrap{width:min(1180px,calc(100% - 44px));margin:auto}.topbar{display:flex;justify-content:space-between;align-items:center;padding:31px 0 4px}.brand{font-weight:800;letter-spacing:.14em;font-size:12px}.brand span{color:var(--teal)}.edition{font-size:11px;letter-spacing:.13em;color:var(--muted)}
+.hero{padding:39px 0 29px}.eyebrow{font-size:11px;letter-spacing:.24em;font-weight:800;color:var(--teal);margin-bottom:17px}.hero h1{font-size:clamp(34px,5vw,63px);letter-spacing:-.056em;line-height:1.09;margin:0;max-width:900px}.hero h1 em{font-style:normal;color:var(--teal)}.hero p{color:#aec1cb;max-width:770px;font-size:17px;margin:18px 0 0}
+.workspace{border:1px solid #345465;border-radius:22px;background:linear-gradient(150deg,rgba(22,49,66,.95),rgba(11,28,43,.98));padding:26px;box-shadow:0 24px 65px #0005}.headrow{display:flex;gap:20px;align-items:center;justify-content:space-between;flex-wrap:wrap}.section-kicker{color:#bdd0d9;font-size:11px;letter-spacing:.19em;font-weight:800}.section-name{font-size:22px;font-weight:800;letter-spacing:-.025em;margin-top:4px}.controls{display:flex;flex-wrap:wrap;gap:9px}.scenario{cursor:pointer;background:#122b3c;border:1px solid #426277;border-radius:100px;padding:9px 14px;font-size:12px;font-weight:750;color:#c7dbe2;transition:.18s}.scenario:hover{border-color:var(--teal);transform:translateY(-1px)}.scenario.active{background:var(--teal);color:#062b31;border-color:var(--teal)}.scenario:focus-visible,.node:focus-visible{outline:3px solid #ffc66d;outline-offset:3px}
+.statusline{display:flex;gap:10px;align-items:center;border-radius:11px;padding:12px 14px;background:#0c2331;margin:21px 0 0;font-size:13px;min-height:48px}.status-dot{width:9px;height:9px;border-radius:50%;background:var(--teal);box-shadow:0 0 13px var(--teal);flex:none}.statusline.warn .status-dot{background:var(--orange);box-shadow:0 0 13px var(--orange)}.statusline.fail .status-dot{background:var(--pink);box-shadow:0 0 13px var(--pink)}#statuscopy strong{color:#fff}
+.flow-area{padding:27px 0 16px;overflow-x:auto}.flow-nodes{display:grid;grid-template-columns:repeat(6, minmax(137px,1fr));gap:19px;min-width:945px}.node{position:relative;min-height:153px;border-radius:15px;background:linear-gradient(140deg,#163548,#11293a);border:1px solid #3a5969;text-align:left;padding:17px 14px;cursor:pointer;color:var(--white);transition:transform .18s,border-color .18s,background .18s}.node:not(:last-child):after{content:'➜';position:absolute;right:-21px;top:66px;width:23px;color:#6fb9d1;font-size:17px;text-align:center;pointer-events:none}.node:hover,.node.selected{border-color:var(--teal);background:#173e4c;transform:translateY(-3px)}.node.active-node{border-color:var(--teal);box-shadow:0 0 0 1px #6af4c638,0 0 25px #6af4c62a}.node.problem{border-color:var(--pink);box-shadow:0 0 23px #f6a4ac2e}.node .nicon{font-size:27px;line-height:1.1;display:block;margin-bottom:18px}.node .ntitle{display:block;font-size:13px;font-weight:850;line-height:1.28}.node .nsub{display:block;margin-top:7px;color:#a9c0cd;font-size:11px;line-height:1.4}
+.side-route{margin-top:10px;display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:945px}.route-label{font-size:11px;letter-spacing:.15em;color:#8eabba;font-weight:800}.route-content{display:flex;align-items:center;gap:12px}.route-stroke{color:#6c9cae;font-size:22px}.mini-node{border:1px dashed #547482;border-radius:11px;padding:9px 17px;color:#9cb7c5;font-size:12px;font-weight:750;background:#10293b}.mini-node.lit{color:#ffe0d8;border-color:#f6a4ac;background:#502a39;box-shadow:0 0 24px #ff8e9d22}.cloudbadges{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}.cloudbadges span{border:1px solid #34596a;color:#aec6ce;border-radius:50px;font-size:11px;padding:5px 10px}
+.info-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:15px;margin-top:20px}.info{background:#0a1e2d;border:1px solid #294656;border-radius:14px;padding:19px;min-height:174px}.info h3{font-size:11px;text-transform:uppercase;letter-spacing:.17em;color:#8dacbd;margin:0 0 12px}.explain-title{font-size:19px;font-weight:850;line-height:1.25;margin-bottom:8px}.explain-desc{font-size:13px;color:#acc1ce}.eventlog{list-style:none;margin:0;padding:0;display:grid;gap:9px}.eventlog li{color:#b6d1d8;font:12px/1.35 ui-monospace,SFMono-Regular,Consolas,monospace;padding-left:17px;position:relative}.eventlog li:before{content:'•';position:absolute;left:0;color:var(--teal);font-size:18px;top:-4px}.footnote{font-size:12px;color:#8ba3af;margin:18px 4px 0}.footer{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;padding:26px 0 46px;color:#7793a4;font-size:12px}.footer strong{color:#c3d9df}
+#share-card{width:1080px;height:1080px;position:relative;overflow:hidden;margin:50px auto 0;background:radial-gradient(circle at 100% 0%,#1b4350 0%,#091c2b 48%,#06121e 90%);border:1px solid #315565;padding:66px 67px 56px;display:none}.share-top{display:flex;justify-content:space-between;align-items:center}.share-brand{font-size:19px;letter-spacing:.12em;font-weight:900}.share-brand span{color:var(--teal)}.share-ref{font-size:14px;letter-spacing:.13em;color:#87b4c5}.share-eyebrow{margin-top:67px;font-size:17px;letter-spacing:.18em;color:var(--teal);font-weight:850}.share-title{font-size:63px;font-weight:900;letter-spacing:-.052em;line-height:1.14;margin-top:24px;max-width:870px}.share-title em{font-style:normal;color:var(--teal);margin-left:8px}.share-sub{font-size:22px;color:#afc5d0;line-height:1.45;margin:25px 0 39px;max-width:860px}.share-diagram{border:1px solid #426376;border-radius:22px;background:#0c2535;padding:30px 24px;position:relative}.share-nodes{display:grid;grid-template-columns:repeat(5,1fr);gap:20px}.share-node{border-radius:14px;background:#16384b;border:1px solid #3d6578;padding:17px 10px;min-height:151px;position:relative;text-align:center}.share-node:not(:last-child):after{content:'→';position:absolute;color:#85c8dd;font-size:27px;right:-21px;top:55px;z-index:2}.share-node b{display:block;font-size:15px;margin-top:8px}.share-node small{display:block;color:#95b2c0;font-size:12px;margin-top:5px}.share-node i{font-style:normal;font-size:26px}.share-node.dup{border-color:#ffd58d;box-shadow:0 0 20px #ffd58d2c}.share-node.failed{border-color:#f6a4ac;box-shadow:0 0 20px #f6a4ac3c}.share-dlq{display:flex;align-items:center;justify-content:flex-end;gap:13px;font-size:15px;padding-top:25px;color:#adc6d2}.share-dlq strong{color:#a8bcc5;border:1px dashed #577789;border-radius:11px;padding:10px 13px;font-size:14px}.share-dlq strong.lit{color:#ffe5e5;background:#482b3d;border-color:var(--pink)}.share-result{margin-top:29px;padding:19px 22px;background:#103347;border-left:5px solid var(--teal);font-size:23px;font-weight:800;line-height:1.34;border-radius:9px}.share-result.warn{border-left-color:var(--orange)}.share-result.fail{border-left-color:var(--pink)}.share-bottom{position:absolute;left:67px;right:67px;bottom:51px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid #395868;padding-top:23px}.share-bottom span{color:#9dbbc7;font-size:14px}.share-bottom strong{color:var(--teal);font-size:15px;letter-spacing:.07em}
+@media(max-width:760px){.wrap{width:min(100% - 28px,1180px)}.topbar{padding:22px 0 0}.edition{display:none}.hero{padding:36px 0 23px}.hero p{font-size:15px}.workspace{padding:16px}.info-grid{grid-template-columns:1fr}.scenario{font-size:11px}.footer{padding-bottom:25px}#share-card{display:none!important}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="topbar"><div class="brand">HARSHINI <span>RAO</span></div><div class="edition">ENGINEERING FIELD NOTES&nbsp;&nbsp; / &nbsp;&nbsp;01</div></header>
+  <section class="hero">
+    <div class="eyebrow">INTERACTIVE CLOUD ARCHITECTURE</div>
+    <h1>Your event arrived.<br><em>Then it arrived again.</em></h1>
+    <p>A small experiment in distributed-system reliability. Switch scenarios to see how an AWS event-driven application handles normal processing, duplicate delivery, and repeated failures.</p>
+  </section>
+  <main class="workspace">
+    <div class="headrow"><div><div class="section-kicker">EXPLORE THE SYSTEM</div><div class="section-name">What happens next?</div></div><div class="controls" role="group" aria-label="Choose a processing scenario">
+      <button class="scenario active" data-scenario="normal" aria-pressed="true">✓ Normal delivery</button>
+      <button class="scenario" data-scenario="duplicate" aria-pressed="false">↻ Duplicate event</button>
+      <button class="scenario" data-scenario="failure" aria-pressed="false">⚠ Repeated failure</button>
+    </div></div>
+    <div class="statusline" id="status"><span class="status-dot" aria-hidden="true"></span><span id="statuscopy"><strong>SUCCESS</strong> · Event processed once and acknowledged.</span></div>
+    <div class="flow-area">
+      <div class="flow-nodes" aria-label="AWS event flow">
+        <button class="node" data-node="client"><span class="nicon">💻</span><span class="ntitle">Client</span><span class="nsub">Sends a request</span></button>
+        <button class="node" data-node="gateway"><span class="nicon">🌐</span><span class="ntitle">API Gateway</span><span class="nsub">Routes the request</span></button>
+        <button class="node" data-node="ingest"><span class="nicon">λ</span><span class="ntitle">Lambda: ingest</span><span class="nsub">Validates + publishes</span></button>
+        <button class="node" data-node="sqs"><span class="nicon">📨</span><span class="ntitle">Amazon SQS</span><span class="nsub">At-least-once delivery</span></button>
+        <button class="node" data-node="worker"><span class="nicon">λ</span><span class="ntitle">Lambda: worker</span><span class="nsub">Idempotent processing</span></button>
+        <button class="node" data-node="storage"><span class="nicon">🗄️</span><span class="ntitle">Storage</span><span class="nsub">S3 + data store</span></button>
+      </div>
+      <div class="side-route"><span class="route-label">FAILURE HANDLING PATH</span><div class="route-content"><span class="route-stroke">SQS retries →</span><span class="mini-node" id="dlq">☣ Dead-letter queue</span></div></div>
+    </div>
+    <div class="cloudbadges"><span>Node.js / TypeScript</span><span>AWS Lambda</span><span>SQS + DLQ</span><span>Idempotency</span><span>Amazon S3</span><span>AWS CDK</span><span>CloudWatch</span></div>
+    <div class="info-grid">
+      <section class="info" aria-live="polite"><h3>Why this matters</h3><div class="explain-title" id="explain-title">Acknowledge successful work</div><div class="explain-desc" id="explain-desc">The consumer handles the message, persists the result, and returns success. The SQS event source mapping removes the successfully processed message from the queue.</div></section>
+      <section class="info"><h3>Sample event trace</h3><ol class="eventlog" id="eventlog"><li>request accepted</li><li>message queued</li><li>worker processed event</li><li>message acknowledged</li></ol></section>
+    </div>
+    <p class="footnote">Illustrative reference architecture, not a representation of a specific production project. For SQS standard queues, delivery is at least once. Real implementations also need correct visibility timeouts, DLQ redrive settings, retry safeguards, and monitoring. Click any component for its role.</p>
+  </main>
+  <footer class="footer"><span><strong>HARSHINI RAO</strong> &nbsp;•&nbsp; Software engineering & cloud-native systems</span><span>Made to explore, not just to look at.</span></footer>
+</div>
+<!-- Special share-ready panel rendered into LinkedIn preview images -->
+<div id="share-card" aria-hidden="true">
+  <div class="share-top"><div class="share-brand">HARSHINI <span>RAO</span></div><div class="share-ref">CLOUD ENGINEERING / 01</div></div>
+  <div class="share-eyebrow">DISTRIBUTED SYSTEMS, VISUALIZED</div>
+  <div class="share-title">What happens when<br>an event <em>arrives twice?</em></div>
+  <p class="share-sub">The difference between a working application and a resilient one starts here.</p>
+  <div class="share-diagram">
+    <div class="share-nodes">
+      <div class="share-node"><i>🌐</i><b>API</b><small>Request</small></div>
+      <div class="share-node"><i>λ</i><b>Lambda</b><small>Publish</small></div>
+      <div class="share-node" id="share-sqs"><i>📨</i><b>SQS</b><small>Queue</small></div>
+      <div class="share-node" id="share-worker"><i>λ</i><b>Lambda</b><small>Process</small></div>
+      <div class="share-node"><i>🗄</i><b>Storage</b><small>Persist</small></div>
+    </div>
+    <div class="share-dlq">Retry &amp; redrive <span>→</span><strong id="share-dlq">Dead-letter queue</strong></div>
+  </div>
+  <div class="share-result" id="share-result">✓ Normal delivery: one event, one result.</div>
+  <div class="share-bottom"><span>AWS Lambda · SQS · TypeScript · CDK · S3</span><strong>DESIGN FOR FAILURE.</strong></div>
+</div>
+<script>
+const scenarios={
+ normal:{status:'<strong>SUCCESS</strong> · Event processed once and acknowledged.',className:'',explainTitle:'Acknowledge successful work',explainDesc:'The consumer handles the message, persists the result, and returns success. The SQS event source mapping removes the successfully processed message from the queue.',log:['request accepted','message queued','worker processed event','message acknowledged'],hot:'storage',share:'✓ Normal delivery: one event, one result.',shareClass:''},
+ duplicate:{status:'<strong>DUPLICATE DETECTED</strong> · Replay does not repeat the business action.',className:'warn',explainTitle:'Make the consumer idempotent',explainDesc:'SQS standard queues can deliver a message more than once. The worker checks a stable event ID against durable deduplication state and avoids applying the same side effect twice. Handle concurrency and atomicity carefully.',log:['event ID: EVT-1042 received','first delivery processed','EVT-1042 delivered again','idempotency check prevents duplicate write'],hot:'worker',share:'↻ Duplicate delivery: same event, no second write.',shareClass:'warn'},
+ failure:{status:'<strong>RETRIES EXHAUSTED</strong> · Message isolated for investigation.',className:'fail',explainTitle:'Retry safely, then isolate',explainDesc:'When processing repeatedly fails, Lambda leaves the SQS message available for another delivery after its visibility timeout. After the configured maxReceiveCount, SQS moves it to a dead-letter queue for investigation or controlled replay.',log:['worker raises processing error','message becomes visible again','retry attempts exceed threshold','SQS redrives message to DLQ'],hot:'worker',share:'⚠ Repeated failure: retry, then move to DLQ.',shareClass:'fail'}
+};
+const nodeNotes={client:['Client','Initiates a business request. Give each logical operation an identity that can survive retries.'],gateway:['API Gateway','Receives the HTTP request and routes it to an ingest function. Authentication, validation, and throttling are separate concerns.'],ingest:['Lambda: ingest','Validates the payload and publishes a message to SQS. Use structured logging and a stable event identifier.'],sqs:['Amazon SQS','Buffers work between producers and consumers. Standard queues offer at-least-once delivery, so consumers must tolerate duplicates.'],worker:['Lambda: worker','Processes SQS batches. Handle partial failures correctly, and make side effects safe under retries and concurrent delivery.'],storage:['Storage','An example design can persist artifacts in S3 and metadata/idempotency state in a data store. Exact transactions depend on the selected storage system.']};
+const buttons=[...document.querySelectorAll('.scenario')];let current='normal';
+function setScenario(name){current=name;const s=scenarios[name];buttons.forEach(b=>{const on=b.dataset.scenario===name;b.classList.toggle('active',on);b.setAttribute('aria-pressed',String(on))});document.getElementById('status').className='statusline '+s.className;document.getElementById('statuscopy').innerHTML=s.status;document.getElementById('explain-title').textContent=s.explainTitle;document.getElementById('explain-desc').textContent=s.explainDesc;document.getElementById('eventlog').innerHTML=s.log.map(t=>'<li>'+t+'</li>').join('');document.querySelectorAll('.node').forEach(n=>{n.classList.remove('active-node','problem','selected');if(n.dataset.node===s.hot)n.classList.add(name==='failure'?'problem':'active-node')});document.getElementById('dlq').classList.toggle('lit',name==='failure');document.getElementById('share-sqs').classList.toggle('dup',name==='duplicate');document.getElementById('share-worker').classList.toggle('failed',name==='failure');document.getElementById('share-dlq').classList.toggle('lit',name==='failure');document.getElementById('share-result').textContent=s.share;document.getElementById('share-result').className='share-result '+s.shareClass}
+buttons.forEach(b=>b.addEventListener('click',()=>setScenario(b.dataset.scenario)));
+document.querySelectorAll('.node').forEach(n=>n.addEventListener('click',()=>{document.querySelectorAll('.node').forEach(x=>x.classList.remove('selected'));n.classList.add('selected');const x=nodeNotes[n.dataset.node];document.getElementById('explain-title').textContent=x[0];document.getElementById('explain-desc').textContent=x[1]}));
+setScenario('normal');
+window.setScenario=setScenario;
+</script>
+</body></html>
